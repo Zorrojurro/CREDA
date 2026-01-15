@@ -56,39 +56,6 @@
 
 ---
 
-## Quick Start
-
-### Prerequisites
-- Node.js 18+
-- npm or pnpm
-
-### 1. Clone & Install
-
-```bash
-git clone https://github.com/Zorrojurro/CREDA.git
-cd CREDA
-npm install
-```
-
-### 2. Start Backend Server
-
-```bash
-cd server
-npm install
-npm start
-```
-Backend runs on `http://localhost:3001`
-
-### 3. Start Frontend
-
-```bash
-# In root directory
-npm run dev
-```
-Frontend runs on `http://localhost:5173`
-
----
-
 ## Project Structure
 
 ```
