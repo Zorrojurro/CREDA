@@ -1,32 +1,32 @@
 // Constants for the AI Screening Engine
 
-// Question templates - Experience-based, anti-cheat questions
-// These are designed to be personal and cannot be Googled
+// Question templates - STAR method focused, anti-cheat questions
+// These prompt Situation, Task, Action, Result answers that cannot be Googled
 export const QUESTION_TEMPLATES = {
   experience: [
-    "Walk me through YOUR last project using {skill}. What exactly did you build and what was your role?",
-    "Tell me about a real bug you encountered with {skill}. How did you find it and fix it?",
-    "Describe YOUR setup when working with {skill}. What IDE, tools, and workflow do you use?",
-    "What's something about {skill} that took you a while to truly understand? How did it finally click?",
-    "Tell me about a {skill} project that you're particularly proud of. What made it special?",
+    "Tell me about a specific project where you used {skill}. What was the situation, what did YOU do, and what was the measurable outcome?",
+    "Walk me through a real challenge you faced with {skill}. What was the problem, how did you approach it, and what did you achieve?",
+    "Describe a time you implemented {skill} from scratch. What was the context, your exact approach, and what results did it produce?",
+    "Share a story where your {skill} work made a significant impact. What was the starting situation, your actions, and the final metrics?",
+    "Give me a concrete example of using {skill} in production. What was at stake, what did you build, and how did it perform?",
   ],
 
   depth: [
-    "When working with {skill}, what's your go-to approach when something breaks? Walk me through your debugging steps.",
-    "What's a common mistake you see others make with {skill} that you've learned to avoid?",
-    "Describe a time you had to optimize {skill} code. What was slow and how did you improve it?",
-    "How do you typically structure your {skill} projects? Walk me through your folder organization.",
+    "When you faced a performance issue with {skill}, walk me through your debugging process step-by-step. What tools did you use?",
+    "Tell me about a {skill} architecture decision you made. What alternatives did you evaluate and why did you choose your approach?",
+    "Describe a time you optimized {skill} code. What metrics did you improve and by how much?",
+    "How do you typically test your {skill} code? Give me a real example with specific testing strategies you used.",
   ],
 
   collaboration: [
-    "Tell me about a code review involving {skill} where you disagreed with a teammate. How did you handle it?",
-    "Describe a time you had to explain {skill} to a junior developer. What was challenging about it?",
+    "Tell me about a disagreement you had with a teammate about {skill}. What was the situation, how did you handle it, and what was the outcome?",
+    "Describe a time you mentored someone on {skill}. What was challenging, and how did you measure their improvement?",
   ],
 
   failure: [
-    "Tell me about a time {skill} code you wrote broke in production. What happened?",
-    "What's something you built with {skill} that completely failed? What did you learn?",
-    "Describe your worst experience debugging {skill}. What made it so difficult?",
+    "Tell me about a time your {skill} code caused a production incident. What happened, how did you fix it, and what did you learn?",
+    "Share a {skill} project that didn't go as planned. What went wrong, what actions did you take, and what would you do differently?",
+    "Describe your worst debugging experience with {skill}. What made it difficult, and how did you eventually solve it?",
   ],
 };
 

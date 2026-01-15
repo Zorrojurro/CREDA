@@ -161,7 +161,7 @@ export default function App() {
     // Generate questions
     const focusSkills = identifyFocusSkills(mapping);
     const opening = generateOpeningQuestion(jobDescription);
-    const mainQuestions = generateInterviewQuestions(mapping, focusSkills, 4);
+    const mainQuestions = generateInterviewQuestions(mapping, focusSkills, 2);
     const closing = generateClosingQuestion();
 
     setQuestions([opening, ...mainQuestions, closing]);

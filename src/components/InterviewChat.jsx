@@ -418,12 +418,6 @@ export default function InterviewChat({
 
           <form onSubmit={handleSubmit}>
             <div className="relative flex items-end gap-2 bg-obsidian-light border border-gray-700 rounded-2xl p-2 shadow-2xl transition-all duration-200 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30">
-              <button
-                type="button"
-                className="p-3 text-text-muted hover:text-white transition-colors rounded-xl hover:bg-white/5 flex-shrink-0 self-end mb-1"
-              >
-                <span className="material-symbols-outlined">mic</span>
-              </button>
 
               <textarea
                 ref={inputRef}

@@ -12,6 +12,123 @@ export function countFirstPersonIndicators(text) {
 }
 
 /**
+ * Detect STAR method components in answer
+ * STAR = Situation, Task, Action, Result
+ * @param {string} text - The answer to analyze
+ * @returns {object} - STAR analysis with component scores
+ */
+export function detectSTARMethod(text) {
+    const textLower = text.toLowerCase();
+    let starScore = 0;
+    const components = { situation: false, task: false, action: false, result: false };
+
+    // Situation indicators
+    const situationPatterns = [
+        /when\s+(i|we)\s+(was|were|worked|had)/i,
+        /at\s+my\s+(previous|last|former)/i,
+        /on\s+(a|the)\s+project/i,
+        /the\s+(context|situation|scenario|background)\s+(was|is)/i,
+        /there\s+was\s+(a|an)\s+(problem|issue|challenge)/i,
+        /we\s+(had|were|needed)\s+to/i,
+    ];
+    if (situationPatterns.some(p => p.test(textLower))) {
+        components.situation = true;
+        starScore += 25;
+    }
+
+    // Task indicators
+    const taskPatterns = [
+        /my\s+(role|responsibility|job|task)\s+(was|is)/i,
+        /i\s+(was|am)\s+(responsible|tasked|assigned)/i,
+        /i\s+needed\s+to/i,
+        /goal\s+(was|is)\s+to/i,
+        /objective\s+(was|is)/i,
+    ];
+    if (taskPatterns.some(p => p.test(textLower))) {
+        components.task = true;
+        starScore += 25;
+    }
+
+    // Action indicators
+    const actionPatterns = [
+        /i\s+(built|created|developed|implemented|wrote|designed|fixed|debugged)/i,
+        /i\s+(decided|chose|selected|used|applied)/i,
+        /my\s+approach\s+(was|is)/i,
+        /i\s+(started|began)\s+by/i,
+        /first,?\s+i\s+/i,
+        /then\s+i\s+/i,
+        /step\s+by\s+step/i,
+    ];
+    if (actionPatterns.some(p => p.test(textLower))) {
+        components.action = true;
+        starScore += 25;
+    }
+
+    // Result indicators
+    const resultPatterns = [
+        /result(ed)?\s+(was|in)/i,
+        /(reduced|improved|increased|saved)\s+(\d+|by)/i,
+        /\d+%\s*(improvement|reduction|increase|faster)/i,
+        /outcome\s+(was|is)/i,
+        /we\s+(achieved|delivered|shipped|launched)/i,
+        /this\s+(led\s+to|resulted\s+in|caused)/i,
+        /in\s+the\s+end/i,
+        /finally/i,
+    ];
+    if (resultPatterns.some(p => p.test(textLower))) {
+        components.result = true;
+        starScore += 25;
+    }
+
+    return {
+        score: starScore,
+        components,
+        isComplete: Object.values(components).filter(Boolean).length >= 3,
+        componentCount: Object.values(components).filter(Boolean).length,
+    };
+}
+
+/**
+ * Detect metrics and quantifiable data in answer
+ * @param {string} text - The answer to analyze
+ * @returns {object} - Metrics analysis
+ */
+export function detectMetrics(text) {
+    const metrics = [];
+
+    // Percentage patterns
+    const percentageMatches = text.match(/\d+(\.\d+)?%/g);
+    if (percentageMatches) {
+        metrics.push(...percentageMatches.map(m => ({ type: 'percentage', value: m })));
+    }
+
+    // Time measurements
+    const timeMatches = text.match(/\d+\s*(ms|milliseconds?|seconds?|minutes?|hours?|days?|weeks?|months?)/gi);
+    if (timeMatches) {
+        metrics.push(...timeMatches.map(m => ({ type: 'time', value: m })));
+    }
+
+    // User/count numbers
+    const countMatches = text.match(/\d+[,\d]*\s*(users?|customers?|requests?|transactions?|records?|lines?|files?)/gi);
+    if (countMatches) {
+        metrics.push(...countMatches.map(m => ({ type: 'count', value: m })));
+    }
+
+    // Money/revenue
+    const moneyMatches = text.match(/\$\d+[,\d]*([kKmM])?|\d+[,\d]*\s*(dollars?|revenue)/gi);
+    if (moneyMatches) {
+        metrics.push(...moneyMatches.map(m => ({ type: 'money', value: m })));
+    }
+
+    return {
+        hasMetrics: metrics.length > 0,
+        count: metrics.length,
+        metrics,
+        score: Math.min(metrics.length * 20, 100),
+    };
+}
+
+/**
  * Calculate specificity score based on concrete details
  * @param {string} text - The text to analyze
  * @returns {number} - Specificity score (0-100)
@@ -19,6 +136,14 @@ export function countFirstPersonIndicators(text) {
 export function calculateSpecificityScore(text) {
     let score = 0;
     const textLower = text.toLowerCase();
+
+    // STAR method bonus
+    const starAnalysis = detectSTARMethod(text);
+    score += starAnalysis.score * 0.4; // 40% weight for STAR
+
+    // Metrics bonus
+    const metricsAnalysis = detectMetrics(text);
+    score += metricsAnalysis.score * 0.3; // 30% weight for metrics
 
     // Check for specific technical terms
     const technicalPatterns = [
@@ -34,7 +159,7 @@ export function calculateSpecificityScore(text) {
 
     technicalPatterns.forEach(pattern => {
         if (pattern.test(textLower)) {
-            score += 12;
+            score += 5;
         }
     });
 
@@ -46,15 +171,15 @@ export function calculateSpecificityScore(text) {
 
     toolMentions.forEach(tool => {
         if (textLower.includes(tool)) {
-            score += 8;
+            score += 4;
         }
     });
 
     // Longer, detailed answers get bonus
-    if (text.length > 200) score += 10;
-    if (text.length > 400) score += 10;
+    if (text.length > 200) score += 5;
+    if (text.length > 400) score += 5;
 
-    return Math.min(score, 100);
+    return Math.min(Math.round(score), 100);
 }
 
 /**
