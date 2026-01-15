@@ -172,7 +172,7 @@ Answers are scored higher when they include:
 
 | Service | URL |
 |---------|-----|
-| **Frontend** | [https://creda.vercel.app](https://creda.vercel.app) |
+| **Frontend** | [https://creda.vercel.app](https://creda-alpha.vercel.app/) |
 | **Backend API** | [https://creda-backend-3mb5.onrender.com](https://creda-backend-3mb5.onrender.com) |
 
 ### Try It Out
