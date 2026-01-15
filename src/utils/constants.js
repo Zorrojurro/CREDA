@@ -1,0 +1,261 @@
+// Constants for the AI Screening Engine
+
+// Question templates - Experience-based, anti-cheat questions
+// These are designed to be personal and cannot be Googled
+export const QUESTION_TEMPLATES = {
+  experience: [
+    "Walk me through YOUR last project using {skill}. What exactly did you build and what was your role?",
+    "Tell me about a real bug you encountered with {skill}. How did you find it and fix it?",
+    "Describe YOUR setup when working with {skill}. What IDE, tools, and workflow do you use?",
+    "What's something about {skill} that took you a while to truly understand? How did it finally click?",
+    "Tell me about a {skill} project that you're particularly proud of. What made it special?",
+  ],
+
+  depth: [
+    "When working with {skill}, what's your go-to approach when something breaks? Walk me through your debugging steps.",
+    "What's a common mistake you see others make with {skill} that you've learned to avoid?",
+    "Describe a time you had to optimize {skill} code. What was slow and how did you improve it?",
+    "How do you typically structure your {skill} projects? Walk me through your folder organization.",
+  ],
+
+  collaboration: [
+    "Tell me about a code review involving {skill} where you disagreed with a teammate. How did you handle it?",
+    "Describe a time you had to explain {skill} to a junior developer. What was challenging about it?",
+  ],
+
+  failure: [
+    "Tell me about a time {skill} code you wrote broke in production. What happened?",
+    "What's something you built with {skill} that completely failed? What did you learn?",
+    "Describe your worst experience debugging {skill}. What made it so difficult?",
+  ],
+};
+
+
+// Follow-up question templates - context-aware for any skill type
+export const FOLLOWUP_TEMPLATES = {
+  specificity: [
+    "Can you walk me through a specific example of how you applied this?",
+    "What were the measurable results or outcomes from that experience?",
+    "Can you describe a particular situation where you used {skill} in detail?",
+    "What specific challenges did you face and how did you overcome them?",
+  ],
+
+  depth: [
+    "How did you know that was the right approach?",
+    "What alternatives did you consider before choosing that solution?",
+    "What would you do differently if you faced this situation again?",
+    "What did you learn from that experience that you still apply today?",
+  ],
+
+  consistency: [
+    "You mentioned {detail} - can you elaborate on that?",
+    "That's interesting. How does this connect to your overall experience with {skill}?",
+    "Can you tell me more about {detail} and how it impacted the outcome?",
+  ],
+
+  // Contextual follow-ups based on answer content
+  contextual: [
+    "You mentioned {topic} - can you share more about your role in that?",
+    "Tell me more about the {topic} aspect. What was your specific contribution?",
+    "That's interesting about {topic}. What were the key lessons from that experience?",
+    "Can you elaborate on how {topic} helped you achieve results?",
+  ],
+};
+
+// Red flag patterns for authenticity detection
+export const RED_FLAG_PATTERNS = {
+  generic: [
+    "in general",
+    "typically",
+    "usually we would",
+    "best practice is",
+    "the standard approach",
+    "most developers",
+    "it depends on",
+  ],
+
+  textbook: [
+    "is defined as",
+    "refers to",
+    "is a concept",
+    "is a technique",
+    "is used for",
+    "allows developers to",
+  ],
+
+  overlyPolished: [
+    "seamlessly",
+    "flawlessly",
+    "perfectly",
+    "without any issues",
+    "everything worked as expected",
+  ],
+};
+
+// Authenticity scoring weights
+export const AUTHENTICITY_WEIGHTS = {
+  personalContext: 25,      // Use of "I", "my", "we", "our team"
+  specificDetails: 25,      // Exact errors, code snippets, tool names
+  imperfectNarrative: 20,   // Admits confusion, mistakes, learning
+  depthConsistency: 20,     // Answers align in complexity
+  naturalLanguage: 10,      // Not overly polished
+};
+
+// Skill categories
+export const SKILL_CATEGORIES = {
+  programming: [
+    "javascript", "python", "java", "c++", "c#", "typescript", "go", "rust", "ruby", "php",
+    "swift", "kotlin", "scala", "r", "matlab", "perl", "bash", "powershell", "sql"
+  ],
+  frameworks: [
+    "react", "angular", "vue", "node.js", "express", "django", "flask", "spring", "rails",
+    "next.js", "nuxt", "svelte", "fastapi", "nest.js", ".net", "laravel"
+  ],
+  databases: [
+    "mysql", "postgresql", "mongodb", "redis", "elasticsearch", "cassandra", "dynamodb",
+    "firebase", "sql server", "oracle", "sqlite"
+  ],
+  cloud: [
+    "aws", "azure", "gcp", "docker", "kubernetes", "terraform", "ansible", "jenkins",
+    "github actions", "gitlab ci", "circleci"
+  ],
+  tools: [
+    "git", "jira", "confluence", "slack", "figma", "postman", "swagger", "graphql",
+    "rest api", "microservices", "agile", "scrum"
+  ],
+  data: [
+    "machine learning", "deep learning", "tensorflow", "pytorch", "pandas", "numpy",
+    "scikit-learn", "data analysis", "statistics", "big data", "spark", "hadoop"
+  ],
+};
+
+// Skill aliases for fuzzy matching
+export const SKILL_ALIASES = {
+  // JavaScript ecosystem
+  "react": ["reactjs", "react.js", "react js"],
+  "node.js": ["nodejs", "node", "node js"],
+  "next.js": ["nextjs", "next"],
+  "vue": ["vuejs", "vue.js", "vue js"],
+  "angular": ["angularjs", "angular.js"],
+  "express": ["expressjs", "express.js"],
+  "typescript": ["ts"],
+  "javascript": ["js", "ecmascript", "es6", "es2015"],
+
+  // Python ecosystem
+  "python": ["python3", "py"],
+  "django": ["djangorest", "drf"],
+  "flask": ["flaskapi"],
+  "pandas": ["pd"],
+  "numpy": ["np"],
+
+  // Databases
+  "postgresql": ["postgres", "psql", "pg"],
+  "mongodb": ["mongo"],
+  "mysql": ["mariadb"],
+  "redis": ["redisdb"],
+  "sql server": ["mssql", "tsql", "t-sql"],
+
+  // Cloud & DevOps
+  "aws": ["amazon web services", "amazon aws"],
+  "azure": ["microsoft azure", "azure cloud"],
+  "gcp": ["google cloud", "google cloud platform"],
+  "kubernetes": ["k8s", "kube"],
+  "docker": ["dockerfile", "containers"],
+  "terraform": ["tf", "terragrunt"],
+  "ci/cd": ["cicd", "continuous integration", "continuous deployment"],
+  "github actions": ["gh actions", "gha"],
+
+  // General
+  "machine learning": ["ml", "ai", "artificial intelligence"],
+  "deep learning": ["dl", "neural networks"],
+  "rest api": ["restful", "rest apis", "restful api"],
+  "graphql": ["gql"],
+  "microservices": ["micro services", "micro-services"],
+  "agile": ["agile methodology", "scrum", "kanban"],
+};
+
+// Experience level definitions
+export const EXPERIENCE_LEVELS = {
+  entry: { label: "Entry Level (0-2 years)", min: 0, max: 2 },
+  junior: { label: "Junior (2-4 years)", min: 2, max: 4 },
+  mid: { label: "Mid-Level (4-6 years)", min: 4, max: 6 },
+  senior: { label: "Senior (6-10 years)", min: 6, max: 10 },
+  lead: { label: "Lead/Staff (10+ years)", min: 10, max: 99 },
+};
+
+// Evaluation thresholds
+export const EVALUATION_THRESHOLDS = {
+  pass: {
+    skillMatch: 70,
+    authenticity: 65,
+    overall: 70,
+  },
+  hold: {
+    skillMatch: 50,
+    authenticity: 50,
+    overall: 50,
+  },
+  // Below hold thresholds = reject
+};
+
+// Decision reasons templates
+export const DECISION_REASONS = {
+  pass: [
+    "Strong alignment with required skills",
+    "Demonstrated real-world experience",
+    "Consistent depth across answers",
+    "Clear understanding of trade-offs",
+    "Good problem-solving approach",
+  ],
+  hold: [
+    "Partial skill match - needs further evaluation",
+    "Some answers lacked specificity",
+    "Experience level needs verification",
+    "Good potential but gaps in key areas",
+  ],
+  reject: [
+    "Significant skill gaps for this role",
+    "Answers lacked concrete examples",
+    "Experience doesn't align with requirements",
+    "Unable to demonstrate practical knowledge",
+  ],
+};
+
+// Improvement suggestions by skill category
+export const IMPROVEMENT_SUGGESTIONS = {
+  programming: [
+    "Build 2-3 personal projects using {skill} to gain hands-on experience",
+    "Contribute to open source projects that use {skill}",
+    "Practice coding challenges on LeetCode or HackerRank focusing on {skill}",
+  ],
+  frameworks: [
+    "Complete an official tutorial or certification for {skill}",
+    "Build a full-stack application using {skill}",
+    "Study the internal architecture of {skill} to understand it deeply",
+  ],
+  databases: [
+    "Set up a local {skill} instance and practice complex queries",
+    "Learn about indexing, optimization, and scaling with {skill}",
+    "Build a project that requires advanced {skill} features",
+  ],
+  cloud: [
+    "Complete AWS/Azure/GCP free tier projects using {skill}",
+    "Get certified in {skill} fundamentals",
+    "Practice deploying real applications using {skill}",
+  ],
+  general: [
+    "Document your learning journey and projects on a blog or portfolio",
+    "Practice explaining technical concepts in simple terms",
+    "Participate in code reviews to improve your skills",
+  ],
+};
+
+// Alternative roles mapping
+export const ALTERNATIVE_ROLES = {
+  "frontend developer": ["ui developer", "react developer", "web developer"],
+  "backend developer": ["api developer", "node.js developer", "python developer"],
+  "full stack developer": ["software engineer", "web developer", "application developer"],
+  "data scientist": ["data analyst", "ml engineer", "business analyst"],
+  "devops engineer": ["site reliability engineer", "cloud engineer", "platform engineer"],
+  "mobile developer": ["ios developer", "android developer", "flutter developer"],
+};
