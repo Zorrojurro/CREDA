@@ -2,9 +2,7 @@
 
 > **Creda** uses AI to conduct authentic, experience-based technical interviews that detect genuine expertise and eliminate resume fraud.
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://creda.vercel.app)
-[![Backend](https://img.shields.io/badge/Backend-Render-blue)](https://creda-backend-3mb5.onrender.com)
-
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://creda-alpha.vercel.app/)
 ---
 
 ## Problem Statement
@@ -190,8 +188,3 @@ Answers are scored higher when they include:
 
 Built for smarter hiring.
 
----
-
-## License
-
-MIT License - See [LICENSE](LICENSE) for details.
