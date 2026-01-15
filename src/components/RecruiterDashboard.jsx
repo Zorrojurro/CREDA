@@ -10,7 +10,7 @@ import { fetchRecruiterStats, fetchRecruiterCodes, fetchCodeSubmissions, logout 
  * Recruiter Dashboard Component
  * Shows screening codes, stats, and submissions
  */
-export default function RecruiterDashboard({ recruiter: _recruiter, onCreateNew, onLogout, onViewSubmission }) {
+export default function RecruiterDashboard({ recruiter, onCreateNew, onLogout, onViewSubmission }) {
     const [stats, setStats] = useState({ totalCodes: 0, totalScreenings: 0, avgTrustScore: 0, timeSaved: 0 });
     const [codes, setCodes] = useState([]);
     const [selectedCode, setSelectedCode] = useState(null);
@@ -77,14 +77,34 @@ export default function RecruiterDashboard({ recruiter: _recruiter, onCreateNew,
 
     const isExpired = (expiresAt) => new Date(expiresAt) < new Date();
 
+    // Get user initials for avatar
+    const getInitials = (name) => {
+        if (!name) return '??';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    };
+
     return (
         <div className="space-y-8">
-            {/* Hero Header */}
+            {/* Hero Header with User Info */}
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
                 <div className="space-y-3 max-w-2xl">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-3 mb-2"
+                    >
+                        <div className="size-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center text-primary font-bold">
+                            {getInitials(recruiter?.name)}
+                        </div>
+                        <div>
+                            <p className="text-sm text-text-muted">Welcome back,</p>
+                            <p className="text-lg font-bold text-white">{recruiter?.name || 'Recruiter'}</p>
+                        </div>
+                    </motion.div>
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
                         className="text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-[1.1]"
                     >
                         Trust in <span className="gradient-text">Every Hire</span>
@@ -92,7 +112,7 @@ export default function RecruiterDashboard({ recruiter: _recruiter, onCreateNew,
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
+                        transition={{ delay: 0.2 }}
                         className="text-text-muted text-lg max-w-lg font-light leading-relaxed"
                     >
                         {codes.length > 0

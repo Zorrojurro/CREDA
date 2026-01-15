@@ -3,7 +3,8 @@
  * Handles all communication with the Creda backend
  */
 
-const API_BASE = '/api';
+// Use environment variable for production, fallback to /api for local dev (Vite proxy)
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Session token storage
 let authToken = localStorage.getItem('creda_token');
