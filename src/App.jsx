@@ -25,6 +25,9 @@ import { calculateEvaluationMetrics, makeDecision, generateRecruiterReport, gene
 // API
 import { getCurrentUser, startApplicantScreening, updateScreening, fetchScreening, getAuthToken } from './services/api';
 
+// AI Service (Gemini)
+import { isAIAvailable, parseResumeWithAI, generateAIReport } from './services/aiService';
+
 import './index.css';
 
 // App phases
@@ -58,6 +61,7 @@ export default function App() {
   const [questions, setQuestions] = useState([]);
   const [recruiterReport, setRecruiterReport] = useState(null);
   const [candidateFeedback, setCandidateFeedback] = useState(null);
+  const [aiResumeData, setAiResumeData] = useState(null); // AI-parsed resume data
 
   // For viewing past results
   const [viewingSubmission, setViewingSubmission] = useState(null);
@@ -158,6 +162,16 @@ export default function App() {
     const mapping = mapSkillsToRequirements(resume, jobDescription);
     setSkillMapping(mapping);
 
+    // Try AI-powered resume parsing (non-blocking enhancement)
+    if (isAIAvailable()) {
+      parseResumeWithAI(resume, jobDescription).then(aiResult => {
+        if (aiResult?.success) {
+          setAiResumeData(aiResult.data);
+          console.log('AI Resume parsing complete:', aiResult.data);
+        }
+      }).catch(err => console.log('AI parsing skipped:', err.message));
+    }
+
     // Generate questions
     const focusSkills = identifyFocusSkills(mapping);
     const opening = generateOpeningQuestion(jobDescription);
@@ -197,6 +211,25 @@ export default function App() {
     recReport.jobTitle = jobDescription.title;
     candFeedback.candidateName = candidateName;
     candFeedback.jobTitle = jobDescription.title;
+
+    // Enhance with AI report if available
+    if (isAIAvailable()) {
+      try {
+        const aiReport = await generateAIReport(
+          { questions, answers: qaPairs.map(qa => qa.answer) },
+          aiResumeData,
+          jobDescription
+        );
+        if (aiReport?.success) {
+          // Merge AI insights into reports
+          recReport.aiInsights = aiReport.data;
+          candFeedback.aiInsights = aiReport.data;
+          console.log('AI Report generated:', aiReport.data);
+        }
+      } catch (err) {
+        console.log('AI report skipped:', err.message);
+      }
+    }
 
     setRecruiterReport(recReport);
     setCandidateFeedback(candFeedback);
