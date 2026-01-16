@@ -217,9 +217,114 @@ export function getExperienceSummary(parsedResume) {
     };
 }
 
+/**
+ * Extract dynamic skills not in hardcoded list
+ * Detects potential skills using patterns and context
+ * @param {object} parsedResume - Parsed resume
+ * @param {Set} knownSkills - Already found skills to exclude
+ * @returns {object[]} - Dynamically detected skills
+ */
+export function extractDynamicSkills(parsedResume, knownSkills = new Set()) {
+    const dynamicSkills = [];
+    const foundSkills = new Set(knownSkills);
+
+    // Combine skills and projects sections (most likely to have unlisted technologies)
+    const skillsText = parsedResume.sections.skills.join(' ');
+    const projectsText = parsedResume.sections.projects.join(' ');
+    const combinedText = skillsText + ' ' + projectsText;
+
+    // Pattern 1: CamelCase or PascalCase words (common for technologies)
+    // e.g., GraphQL, TailwindCSS, FastAPI
+    const camelCasePattern = /\b([A-Z][a-z]+(?:[A-Z][a-z]+)+|[A-Z]{2,}[a-z]+)\b/g;
+    const camelMatches = combinedText.match(camelCasePattern) || [];
+
+    for (const match of camelMatches) {
+        const lower = match.toLowerCase();
+        if (!foundSkills.has(lower) && match.length >= 3 && match.length <= 20) {
+            foundSkills.add(lower);
+            dynamicSkills.push({
+                skill: match,
+                section: 'dynamic',
+                mentions: 1,
+                context: findContextSentence(combinedText, match),
+                detectionMethod: 'camelCase',
+                weight: 0.8,
+            });
+        }
+    }
+
+    // Pattern 2: Words ending in common tech suffixes
+    // e.g., Kubernetes, TensorFlow, GraphDB
+    const techSuffixes = /\b(\w+(?:JS|DB|SQL|API|ML|AI|UI|UX|CI|CD|IO|OS))\b/gi;
+    const suffixMatches = combinedText.match(techSuffixes) || [];
+
+    for (const match of suffixMatches) {
+        const lower = match.toLowerCase();
+        if (!foundSkills.has(lower) && match.length >= 3) {
+            foundSkills.add(lower);
+            dynamicSkills.push({
+                skill: match,
+                section: 'dynamic',
+                mentions: 1,
+                context: findContextSentence(combinedText, match),
+                detectionMethod: 'techSuffix',
+                weight: 0.7,
+            });
+        }
+    }
+
+    // Pattern 3: Comma-separated lists in skills section (often technologies)
+    const listPatterns = /(?:[:,]\s*)([A-Z][a-zA-Z0-9.]+)(?:\s*[,|])/g;
+    const listMatches = [...skillsText.matchAll(listPatterns)];
+
+    for (const match of listMatches) {
+        if (match[1]) {
+            const skill = match[1].trim();
+            const lower = skill.toLowerCase();
+            if (!foundSkills.has(lower) && skill.length >= 2 && skill.length <= 25) {
+                foundSkills.add(lower);
+                dynamicSkills.push({
+                    skill: skill,
+                    section: 'skills',
+                    mentions: 1,
+                    context: '',
+                    detectionMethod: 'commaSeparated',
+                    weight: 0.6,
+                });
+            }
+        }
+    }
+
+    // Pattern 4: Versioned technologies (e.g., Python 3.9, Node 18, ES2020)
+    const versionedPattern = /\b([A-Z][a-zA-Z]+)\s*(?:v\.?)?(\d+(?:\.\d+)*)\b/gi;
+    const versionMatches = [...combinedText.matchAll(versionedPattern)];
+
+    for (const match of versionMatches) {
+        if (match[1]) {
+            const skill = match[1].trim();
+            const lower = skill.toLowerCase();
+            if (!foundSkills.has(lower) && skill.length >= 2) {
+                foundSkills.add(lower);
+                dynamicSkills.push({
+                    skill: skill,
+                    section: 'dynamic',
+                    mentions: 1,
+                    context: match[0],
+                    detectionMethod: 'versioned',
+                    version: match[2],
+                    weight: 0.9,
+                });
+            }
+        }
+    }
+
+    return dynamicSkills;
+}
+
 export default {
     parseResumeIntoSections,
     extractExperienceLevel,
     extractSkillsWithContext,
     getExperienceSummary,
+    extractDynamicSkills,
 };

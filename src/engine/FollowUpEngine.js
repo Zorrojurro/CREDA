@@ -100,51 +100,89 @@ export function analyzeNeedForFollowUp(answer, _question) {
  */
 function extractKeyTopics(answer) {
     const topics = [];
-
-    // Common topic patterns to look for
-    const businessTopics = [
-        'sales', 'marketing', 'B2B', 'B2C', 'startup', 'revenue', 'growth',
-        'customer', 'client', 'strategy', 'analytics', 'statistics', 'data',
-        'team', 'leadership', 'management', 'project', 'campaign', 'budget',
-        'partnership', 'negotiation', 'presentation', 'communication'
-    ];
-
-    const technicalTopics = [
-        'coding', 'programming', 'development', 'debugging', 'testing',
-        'deployment', 'architecture', 'database', 'API', 'frontend', 'backend',
-        'optimization', 'performance', 'security', 'integration'
-    ];
-
-    const allTopics = [...businessTopics, ...technicalTopics];
-    const lowerAnswer = answer.toLowerCase();
-
-    // Find matching topics
-    for (const topic of allTopics) {
-        if (lowerAnswer.includes(topic.toLowerCase())) {
-            topics.push(topic);
-        }
-    }
-
-    // Also extract specific phrases that might be relevant
     const phrases = [];
 
-    // Look for "worked for/at/with X" patterns
-    const workPatterns = [
-        /worked (?:for|at|with) (?:a |an |my |the )?([^,.]+?)(?:,|\.|$)/gi,
-        /(?:my |a |the )?friend'?s? (\w+ ?\w*)/gi,
-        /helped (?:me |us )?(?:understand |learn |with )?([^,.]+?)(?:,|\.|$)/gi,
+    // 1. Extract company/organization names (capitalized words often indicate proper nouns)
+    const companyPatterns = [
+        /(?:at|for|with|joined|worked at|worked for)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/g,
+        /(?:company|startup|firm|organization|agency)\s+(?:called|named)?\s*([A-Z][a-zA-Z]+)/gi,
     ];
 
-    for (const pattern of workPatterns) {
+    for (const pattern of companyPatterns) {
         const matches = answer.matchAll(pattern);
         for (const match of matches) {
-            if (match[1] && match[1].trim().length > 2 && match[1].trim().length < 30) {
+            if (match[1] && match[1].length > 2 && match[1].length < 30) {
                 phrases.push(match[1].trim());
             }
         }
     }
 
-    return [...topics.slice(0, 3), ...phrases.slice(0, 2)];
+    // 2. Extract project names and specific technologies
+    const projectPatterns = [
+        /(?:project|app|application|system|platform|tool)\s+(?:called|named)?\s*["']?([A-Z][a-zA-Z0-9]+)["']?/gi,
+        /(?:built|developed|created|designed|launched)\s+(?:a |an |the )?([A-Z][a-zA-Z0-9\s]+?)(?:\s+(?:for|that|which|using))/gi,
+        /(?:the|our|my)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)\s+(?:project|app|system|platform)/gi,
+    ];
+
+    for (const pattern of projectPatterns) {
+        const matches = answer.matchAll(pattern);
+        for (const match of matches) {
+            if (match[1] && match[1].trim().length > 2 && match[1].trim().length < 40) {
+                phrases.push(match[1].trim());
+            }
+        }
+    }
+
+    // 3. Extract specific achievements/metrics references
+    const achievementPatterns = [
+        /(?:reduced|improved|increased|saved|achieved|delivered)\s+([^,.]+?)\s+by\s+\d+/gi,
+        /(\d+[%xX])\s+(?:improvement|reduction|increase|faster|better)/gi,
+        /(\d+(?:,\d+)*)\s+(?:users?|customers?|clients?|requests?|transactions?)/gi,
+    ];
+
+    for (const pattern of achievementPatterns) {
+        const matches = answer.matchAll(pattern);
+        for (const match of matches) {
+            if (match[0] && match[0].length > 5 && match[0].length < 50) {
+                phrases.push(match[0].trim());
+            }
+        }
+    }
+
+    // 4. Common topic keywords (keep as fallback)
+    const topicKeywords = [
+        // Business
+        'startup', 'revenue', 'growth', 'customer', 'client', 'team', 'leadership',
+        // Technical
+        'API', 'frontend', 'backend', 'database', 'architecture', 'deployment',
+        'performance', 'security', 'testing', 'debugging', 'optimization',
+        // Process
+        'sprint', 'agile', 'deadline', 'milestone', 'release', 'production',
+    ];
+
+    const lowerAnswer = answer.toLowerCase();
+    for (const topic of topicKeywords) {
+        if (lowerAnswer.includes(topic.toLowerCase())) {
+            topics.push(topic);
+        }
+    }
+
+    // 5. Extract quoted text (often specific terms)
+    const quotedMatches = answer.match(/"([^"]+)"|'([^']+)'/g);
+    if (quotedMatches) {
+        quotedMatches.slice(0, 2).forEach(q => {
+            const cleaned = q.replace(/['"]/g, '').trim();
+            if (cleaned.length > 2 && cleaned.length < 30) {
+                phrases.push(cleaned);
+            }
+        });
+    }
+
+    // Deduplicate and prioritize specific phrases over generic topics
+    const uniquePhrases = [...new Set(phrases)].slice(0, 3);
+    const uniqueTopics = [...new Set(topics)].slice(0, 2);
+
+    return [...uniquePhrases, ...uniqueTopics];
 }
 
 /**

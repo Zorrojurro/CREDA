@@ -174,6 +174,44 @@ export const SKILL_ALIASES = {
   "agile": ["agile methodology", "scrum", "kanban"],
 };
 
+// Skill Clusters - Related skills that imply each other
+// When a skill is found, related skills can be inferred
+export const SKILL_CLUSTERS = {
+  // Frontend frameworks imply their base languages
+  "react": { implies: ["javascript", "frontend", "jsx", "html", "css"], category: "frontend" },
+  "angular": { implies: ["typescript", "javascript", "frontend", "html", "css"], category: "frontend" },
+  "vue": { implies: ["javascript", "frontend", "html", "css"], category: "frontend" },
+  "next.js": { implies: ["react", "javascript", "node.js", "frontend"], category: "fullstack" },
+  "svelte": { implies: ["javascript", "frontend", "html", "css"], category: "frontend" },
+
+  // Backend frameworks imply their languages
+  "express": { implies: ["node.js", "javascript", "backend", "rest api"], category: "backend" },
+  "django": { implies: ["python", "backend", "rest api"], category: "backend" },
+  "flask": { implies: ["python", "backend", "rest api"], category: "backend" },
+  "spring": { implies: ["java", "backend", "rest api"], category: "backend" },
+  "rails": { implies: ["ruby", "backend", "rest api"], category: "backend" },
+  "fastapi": { implies: ["python", "backend", "rest api"], category: "backend" },
+
+  // Databases imply SQL/NoSQL knowledge
+  "postgresql": { implies: ["sql", "databases", "backend"], category: "database" },
+  "mysql": { implies: ["sql", "databases", "backend"], category: "database" },
+  "mongodb": { implies: ["nosql", "databases", "backend"], category: "database" },
+  "redis": { implies: ["caching", "databases", "backend"], category: "database" },
+
+  // Cloud platforms imply DevOps
+  "aws": { implies: ["cloud", "devops", "infrastructure"], category: "cloud" },
+  "azure": { implies: ["cloud", "devops", "infrastructure"], category: "cloud" },
+  "gcp": { implies: ["cloud", "devops", "infrastructure"], category: "cloud" },
+  "kubernetes": { implies: ["docker", "devops", "containers", "orchestration"], category: "devops" },
+  "docker": { implies: ["containers", "devops"], category: "devops" },
+
+  // Data science stack
+  "tensorflow": { implies: ["python", "machine learning", "deep learning"], category: "data" },
+  "pytorch": { implies: ["python", "machine learning", "deep learning"], category: "data" },
+  "pandas": { implies: ["python", "data analysis"], category: "data" },
+  "scikit-learn": { implies: ["python", "machine learning"], category: "data" },
+};
+
 // Experience level definitions
 export const EXPERIENCE_LEVELS = {
   entry: { label: "Entry Level (0-2 years)", min: 0, max: 2 },
