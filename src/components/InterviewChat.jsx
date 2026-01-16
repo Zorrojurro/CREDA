@@ -28,11 +28,23 @@ export default function InterviewChat({
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [usedAISuggestions, setUsedAISuggestions] = useState(new Set());
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [pasteWarning, setPasteWarning] = useState(false);
 
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
   const messageIdCounter = useRef(0);
   const isInitialized = useRef(false); // Prevent double initialization
+
+  // Copy/Paste Detection State
+  const pasteAnalytics = useRef({
+    pasteCount: 0,
+    pasteEvents: [],
+    totalPastedChars: 0,
+    typedChars: 0,
+    keystrokeTimings: [],
+    lastKeystrokeTime: null,
+    suspiciousPatterns: [],
+  });
 
   // Generate unique message ID
   const getUniqueId = () => {
@@ -137,6 +149,134 @@ export default function InterviewChat({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Reset paste analytics for new question
+  const resetPasteAnalytics = () => {
+    pasteAnalytics.current = {
+      pasteCount: 0,
+      pasteEvents: [],
+      totalPastedChars: 0,
+      typedChars: 0,
+      keystrokeTimings: [],
+      lastKeystrokeTime: null,
+      suspiciousPatterns: [],
+    };
+    setPasteWarning(false);
+  };
+
+  // Handle paste events - detect and log suspicious copy/paste
+  const handlePaste = (e) => {
+    const pastedText = e.clipboardData?.getData('text') || '';
+    const pastedLength = pastedText.length;
+
+    if (pastedLength === 0) return;
+
+    // Record paste event
+    const pasteEvent = {
+      timestamp: Date.now(),
+      length: pastedLength,
+      preview: pastedText.slice(0, 50) + (pastedLength > 50 ? '...' : ''),
+      isLargePaste: pastedLength > 100,
+      hasCodeFormatting: /```|`{3}|function\s*\(|const\s+\w+\s*=/.test(pastedText),
+      hasBulletPoints: /^[\s]*[-•*]\s|\n[-•*]\s/m.test(pastedText),
+      hasNumberedList: /^\d+\.\s|\n\d+\.\s/m.test(pastedText),
+    };
+
+    // Detect ChatGPT/AI-style patterns
+    const aiPatterns = [
+      /^(Sure|Certainly|Of course|Here'?s|Let me|I would)[\s,!]/i,
+      /^(As|In|When) (a|an|the) /i,
+      /\b(firstly|secondly|thirdly|furthermore|moreover|additionally)\b/i,
+      /^Step \d+:/m,
+    ];
+
+    pasteEvent.hasAIPatterns = aiPatterns.some(p => p.test(pastedText));
+
+    // Calculate suspicion level
+    let suspicionLevel = 0;
+    if (pasteEvent.isLargePaste) suspicionLevel += 30;
+    if (pasteEvent.hasCodeFormatting) suspicionLevel += 15;
+    if (pasteEvent.hasBulletPoints) suspicionLevel += 10;
+    if (pasteEvent.hasNumberedList) suspicionLevel += 10;
+    if (pasteEvent.hasAIPatterns) suspicionLevel += 40;
+
+    pasteEvent.suspicionLevel = Math.min(suspicionLevel, 100);
+
+    // Update analytics
+    pasteAnalytics.current.pasteCount += 1;
+    pasteAnalytics.current.pasteEvents.push(pasteEvent);
+    pasteAnalytics.current.totalPastedChars += pastedLength;
+
+    if (pasteEvent.suspicionLevel > 0) {
+      pasteAnalytics.current.suspiciousPatterns.push({
+        type: pasteEvent.hasAIPatterns ? 'ai_pattern' : 'large_paste',
+        level: pasteEvent.suspicionLevel,
+      });
+    }
+
+    // Show warning if suspicious
+    if (pasteEvent.suspicionLevel >= 30) {
+      setPasteWarning(true);
+      // Auto-dismiss after 3 seconds
+      setTimeout(() => setPasteWarning(false), 3000);
+
+      // Penalize trust score
+      setTrustScore(prev => Math.max(prev - 5, 0));
+    }
+
+    console.log('Paste detected:', pasteEvent);
+  };
+
+  // Track typing for pattern analysis
+  const handleTyping = (e) => {
+    const now = Date.now();
+
+    // Track keystroke timing (excluding special keys)
+    if (e.key.length === 1) {
+      pasteAnalytics.current.typedChars += 1;
+
+      if (pasteAnalytics.current.lastKeystrokeTime) {
+        const timeDiff = now - pasteAnalytics.current.lastKeystrokeTime;
+        pasteAnalytics.current.keystrokeTimings.push(timeDiff);
+      }
+      pasteAnalytics.current.lastKeystrokeTime = now;
+    }
+
+    setInputValue(e.target.value);
+  };
+
+  // Get paste suspicion summary for qaPair
+  const getPasteAnalyticsSummary = () => {
+    const analytics = pasteAnalytics.current;
+    const totalChars = analytics.typedChars + analytics.totalPastedChars;
+    const pasteRatio = totalChars > 0 ? analytics.totalPastedChars / totalChars : 0;
+
+    // Calculate average typing speed (chars per second)
+    let avgTypingSpeed = 0;
+    if (analytics.keystrokeTimings.length > 3) {
+      const avgInterval = analytics.keystrokeTimings.reduce((a, b) => a + b, 0) / analytics.keystrokeTimings.length;
+      avgTypingSpeed = avgInterval > 0 ? 1000 / avgInterval : 0;
+    }
+
+    // Detect suspicious patterns
+    const suspicionScore = Math.min(
+      (pasteRatio * 50) +
+      (analytics.pasteCount * 10) +
+      (analytics.suspiciousPatterns.reduce((sum, p) => sum + p.level, 0) / 3),
+      100
+    );
+
+    return {
+      pasteCount: analytics.pasteCount,
+      pasteRatio: Math.round(pasteRatio * 100),
+      totalPastedChars: analytics.totalPastedChars,
+      typedChars: analytics.typedChars,
+      avgTypingSpeed: Math.round(avgTypingSpeed * 10) / 10,
+      suspicionScore: Math.round(suspicionScore),
+      pasteEvents: analytics.pasteEvents,
+      suspiciousPatterns: analytics.suspiciousPatterns,
+    };
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!inputValue.trim() || isTyping || interviewComplete) return;
@@ -166,13 +306,17 @@ export default function InterviewChat({
       const newTrustScore = Math.round((trustScore * 0.7) + (authScore.score * 0.3));
       setTrustScore(Math.max(0, Math.min(100, newTrustScore)));
 
-      // Store Q&A pair
+      // Store Q&A pair with paste analytics
       const qaPair = {
         question: currentQuestion,
         answer,
         authenticity: authScore,
         timeSpent: timePerAnswer - timeRemaining,
+        pasteAnalytics: getPasteAnalyticsSummary(),
       };
+
+      // Reset paste tracking for next question
+      resetPasteAnalytics();
       setQaPairs(prev => [...prev, qaPair]);
 
       // Brief AI thinking delay (fast response)
@@ -241,11 +385,6 @@ export default function InterviewChat({
       addUserMessage('[No response provided]');
       processAnswer('[No response provided]');
     }
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    // Anti-paste protection
   };
 
   const handleEndInterview = () => {
@@ -483,13 +622,44 @@ export default function InterviewChat({
             Anti-paste protection active
           </div>
 
+          {/* Paste Warning Banner */}
+          <AnimatePresence>
+            {pasteWarning && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute -top-20 left-0 right-0 flex items-center justify-center gap-2 text-sm text-red-400 bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/30 backdrop-blur-sm"
+              >
+                <span className="material-symbols-outlined text-[18px] animate-pulse">warning</span>
+                <span className="font-medium">Paste detected</span>
+                <span className="text-red-300/80">• Recruiters can see pasted content</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <form onSubmit={handleSubmit}>
             <div className="relative flex items-end gap-2 bg-obsidian-light border border-gray-700 rounded-2xl p-2 shadow-2xl transition-all duration-200 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30">
 
               <textarea
                 ref={inputRef}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  // Track character count (rough typing estimate)
+                  const newLength = e.target.value.length;
+                  const oldLength = inputValue.length;
+                  if (newLength > oldLength && (newLength - oldLength) === 1) {
+                    // Single character typed - track timing
+                    const now = Date.now();
+                    if (pasteAnalytics.current.lastKeystrokeTime) {
+                      const timeDiff = now - pasteAnalytics.current.lastKeystrokeTime;
+                      pasteAnalytics.current.keystrokeTimings.push(timeDiff);
+                    }
+                    pasteAnalytics.current.lastKeystrokeTime = now;
+                    pasteAnalytics.current.typedChars += 1;
+                  }
+                  setInputValue(e.target.value);
+                }}
                 onPaste={handlePaste}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
