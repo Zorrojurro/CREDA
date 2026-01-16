@@ -14,7 +14,8 @@ export default function InterviewChat({
   onComplete,
   skillMapping,
   jobDescription,
-  timePerAnswer = 180
+  timePerAnswer = 180,
+  aiSuggestedQuestions = []
 }) {
   const [messages, setMessages] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -25,6 +26,8 @@ export default function InterviewChat({
   const [qaPairs, setQaPairs] = useState([]);
   const [followUpCount, setFollowUpCount] = useState({});
   const [interviewComplete, setInterviewComplete] = useState(false);
+  const [usedAISuggestions, setUsedAISuggestions] = useState(new Set());
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -410,6 +413,70 @@ export default function InterviewChat({
       {/* Input Area */}
       <div className="absolute bottom-0 left-0 w-full px-6 lg:px-20 pb-8 pt-4 bg-gradient-to-t from-background-dark via-background-dark to-transparent z-20">
         <div className="max-w-4xl mx-auto relative">
+          {/* AI Suggested Questions Panel */}
+          {aiSuggestedQuestions.length > 0 && !interviewComplete && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowSuggestions(!showSuggestions)}
+                className="flex items-center gap-2 text-xs text-primary/80 hover:text-primary transition-colors mb-2"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  {showSuggestions ? 'expand_less' : 'psychology'}
+                </span>
+                <span>
+                  {showSuggestions ? 'Hide AI Probes' : `AI Probes Available (${aiSuggestedQuestions.filter(q => !usedAISuggestions.has(q)).length})`}
+                </span>
+              </button>
+
+              <AnimatePresence>
+                {showSuggestions && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="glass-panel border border-primary/20 rounded-xl p-4 mb-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
+                        <span className="text-xs font-semibold text-white/90">AI-Suggested Probing Questions</span>
+                        <Badge variant="ai" className="text-[10px] py-0.5">BETA</Badge>
+                      </div>
+                      <p className="text-[11px] text-gray-400 mb-3">
+                        These questions target weak areas identified in the candidate's resume. Click to use as your next response.
+                      </p>
+                      <div className="space-y-2">
+                        {aiSuggestedQuestions
+                          .filter(q => !usedAISuggestions.has(q))
+                          .slice(0, 3)
+                          .map((question, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                setInputValue(question);
+                                setUsedAISuggestions(prev => new Set([...prev, question]));
+                                setShowSuggestions(false);
+                                inputRef.current?.focus();
+                              }}
+                              className="w-full text-left px-3 py-2.5 rounded-lg bg-obsidian-light/50 border border-gray-700/50 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                            >
+                              <div className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-primary/60 text-[16px] mt-0.5 group-hover:text-primary">arrow_forward</span>
+                                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">{question}</span>
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                      {aiSuggestedQuestions.filter(q => !usedAISuggestions.has(q)).length === 0 && (
+                        <p className="text-xs text-gray-500 italic">All suggested probes have been used.</p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {/* Anti-paste warning */}
           <div className="absolute -top-10 left-4 flex items-center gap-2 text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-md border border-primary/20 opacity-80">
             <span className="material-symbols-outlined text-[14px]">content_paste_off</span>

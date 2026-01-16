@@ -403,6 +403,7 @@ export default function App() {
                   skillMapping={skillMapping}
                   jobDescription={{ title: applicantData?.screening?.roleTitle }}
                   candidateName={candidateName}
+                  aiSuggestedQuestions={aiResumeData?.suggestedQuestions || []}
                 />
               </div>
             </motion.div>
