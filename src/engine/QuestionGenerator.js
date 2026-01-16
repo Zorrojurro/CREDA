@@ -138,7 +138,7 @@ export function generateInterviewQuestions(skillMapping, focusSkills, questionCo
             usedQuestionTexts.add(gq.text);
             questions.push({
                 id: `q-${questions.length + 1}`,
-                skill: 'general',
+                skill: 'software development',
                 type: gq.type,
                 priority: 'medium',
                 text: gq.text,
@@ -216,7 +216,7 @@ export function generateOpeningQuestion(_jobDescription) {
         priority: 'high',
         text: templates[Math.floor(Math.random() * templates.length)],
         reason: 'Warm-up and general assessment',
-        skill: 'general',
+        skill: 'problem solving',
         followUpTriggered: false,
     };
 }
@@ -238,7 +238,7 @@ export function generateClosingQuestion() {
         priority: 'low',
         text: templates[Math.floor(Math.random() * templates.length)],
         reason: 'Closing and final assessment',
-        skill: 'general',
+        skill: 'your technical skills',
         followUpTriggered: false,
     };
 }
