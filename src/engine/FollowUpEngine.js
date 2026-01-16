@@ -2,6 +2,29 @@
 import { FOLLOWUP_TEMPLATES } from '../utils/constants';
 import { detectGenericPatterns, calculateSpecificityScore, countFirstPersonIndicators } from '../utils/textAnalysis';
 
+// Track used templates globally for the interview session
+let usedTemplates = new Set();
+
+/**
+ * Reset template tracking for new interview
+ */
+export function resetTemplateTracking() {
+    usedTemplates = new Set();
+}
+
+/**
+ * Get an unused template from a category
+ * @param {string[]} templates - Array of template strings
+ * @returns {string|null} - Unused template or null if all used
+ */
+function getUnusedTemplate(templates) {
+    const available = templates.filter(t => !usedTemplates.has(t));
+    if (available.length === 0) return null;
+    const selected = available[Math.floor(Math.random() * available.length)];
+    usedTemplates.add(selected);
+    return selected;
+}
+
 /**
  * Analyze if a follow-up question is needed
  * @param {string} answer - The candidate's answer
@@ -133,55 +156,63 @@ function extractKeyTopics(answer) {
  */
 export function generateFollowUpQuestion(analysis, originalQuestion, answer) {
     const { followUpType, reason } = analysis;
+    const skillName = originalQuestion.skill || 'this area';
 
-    let templates;
-    let question;
+    let question = null;
 
     // Extract key topics from the answer for contextual follow-ups
     const keyTopics = extractKeyTopics(answer);
     const hasMeaningfulTopics = keyTopics.length > 0;
 
-    // Prioritize contextual follow-ups when we have good topics
+    // Try contextual follow-ups first when we have good topics
     if (hasMeaningfulTopics && FOLLOWUP_TEMPLATES.contextual) {
-        templates = FOLLOWUP_TEMPLATES.contextual;
-        question = templates[Math.floor(Math.random() * templates.length)];
-        // Replace {topic} with the most relevant extracted topic
-        const selectedTopic = keyTopics[0];
-        question = question.replace(/{topic}/g, selectedTopic);
-    } else {
-        switch (followUpType) {
-            case 'specificity':
-                templates = FOLLOWUP_TEMPLATES.specificity;
-                question = templates[Math.floor(Math.random() * templates.length)];
-                break;
-
-            case 'depth':
-                templates = FOLLOWUP_TEMPLATES.depth;
-                question = templates[Math.floor(Math.random() * templates.length)];
-                break;
-
-            case 'consistency':
-                templates = FOLLOWUP_TEMPLATES.consistency;
-                question = templates[Math.floor(Math.random() * templates.length)];
-                break;
-
-            default:
-                question = "Could you share more specific details about that experience?";
+        question = getUnusedTemplate(FOLLOWUP_TEMPLATES.contextual);
+        if (question) {
+            const selectedTopic = keyTopics[0];
+            question = question.replace(/{topic}/g, selectedTopic);
         }
     }
 
-    // Replace placeholders
-    question = question.replace(/{skill}/g, originalQuestion.skill || 'this skill');
+    // If no contextual template available, try type-specific
+    if (!question) {
+        switch (followUpType) {
+            case 'specificity':
+                question = getUnusedTemplate(FOLLOWUP_TEMPLATES.specificity);
+                break;
+            case 'depth':
+                question = getUnusedTemplate(FOLLOWUP_TEMPLATES.depth);
+                break;
+            case 'consistency':
+                question = getUnusedTemplate(FOLLOWUP_TEMPLATES.consistency);
+                break;
+        }
+    }
+
+    // Fallback: generate a skill-specific question if all templates used
+    if (!question) {
+        const fallbacks = [
+            `Can you walk me through a specific example of how you applied ${skillName} in practice?`,
+            `What measurable results did you achieve when working with ${skillName}?`,
+            `Tell me more about the challenges you faced with ${skillName} and how you overcame them.`,
+            `Could you describe your day-to-day experience working with ${skillName}?`,
+        ];
+        question = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+
+    // Replace placeholders with meaningful content
+    question = question.replace(/{skill}/g, skillName);
 
     // Extract a detail from the answer to reference
     const detail = extractDetailFromAnswer(answer);
-    if (detail) {
-        question = question.replace(/{detail}/g, detail);
+    if (detail && detail.length > 3) {
+        question = question.replace(/{detail}/g, `"${detail}"`);
+    } else {
+        // Use skill-based fallback instead of generic "that point"
+        question = question.replace(/{detail}/g, `your experience with ${skillName}`);
     }
 
-    // Clean up any remaining unreplaced placeholders
-    question = question.replace(/{topic}/g, 'that');
-    question = question.replace(/{detail}/g, 'that point');
+    // Use skill name for topics if no topic found
+    question = question.replace(/{topic}/g, `your work with ${skillName}`);
 
     return {
         id: `${originalQuestion.id}-followup`,
@@ -295,4 +326,5 @@ export default {
     getMaxFollowUps,
     FollowUpTracker,
     createProbingStrategy,
+    resetTemplateTracking,
 };

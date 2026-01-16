@@ -1,5 +1,6 @@
 // Skill Mapper Engine - Maps resume content to job requirements
 import { SKILL_CATEGORIES, SKILL_ALIASES } from '../utils/constants';
+import { parseResumeIntoSections, extractSkillsWithContext, getExperienceSummary } from '../utils/resumeParser';
 
 /**
  * Normalize a skill name by finding its canonical form
@@ -59,71 +60,56 @@ function _skillsMatch(skill1, skill2) {
 }
 
 /**
- * Extract skills from resume text
+ * Extract skills from resume text with section awareness
  * @param {string} resumeText - The resume text to parse
  * @returns {object[]} - Array of extracted skills with context
  */
 export function extractSkillsFromResume(resumeText) {
-    const extractedSkills = [];
-    const foundSkills = new Set();
+    // Parse resume into sections first
+    const parsedResume = parseResumeIntoSections(resumeText);
 
-    // Flatten all skill categories
-    const allSkills = Object.entries(SKILL_CATEGORIES).flatMap(([category, skills]) =>
-        skills.map(skill => ({ skill, category }))
-    );
+    // Get all skills to look for
+    const allSkillNames = Object.values(SKILL_CATEGORIES).flat();
 
-    // Also check for aliases
-    const allAliases = Object.entries(SKILL_ALIASES).flatMap(([canonical, aliases]) =>
-        aliases.map(alias => ({ alias, canonical }))
-    );
+    // Also add aliases
+    for (const [canonical, aliases] of Object.entries(SKILL_ALIASES)) {
+        allSkillNames.push(canonical, ...aliases);
+    }
 
-    // Check canonical skills
-    allSkills.forEach(({ skill, category }) => {
-        const regex = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-        const matches = resumeText.match(regex);
+    // Extract skills using section-aware parser
+    const sectionAwareSkills = extractSkillsWithContext(parsedResume, [...new Set(allSkillNames)]);
 
-        if (matches && !foundSkills.has(skill.toLowerCase())) {
-            const context = findSkillContext(resumeText, skill);
-            extractedSkills.push({
-                skill: skill,
-                category: category,
-                mentions: matches.length,
-                context: context,
-                evidence: context.slice(0, 100) + (context.length > 100 ? '...' : ''),
-            });
-            foundSkills.add(skill.toLowerCase());
-        }
-    });
+    // Get overall experience summary
+    const experienceSummary = getExperienceSummary(parsedResume);
 
-    // Check aliases and map to canonical
-    allAliases.forEach(({ alias, canonical }) => {
-        if (foundSkills.has(canonical)) return; // Already found via canonical
-
-        const regex = new RegExp(`\\b${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-        const matches = resumeText.match(regex);
-
-        if (matches) {
-            // Find the category for this skill
-            let category = 'tools';
-            for (const [cat, skills] of Object.entries(SKILL_CATEGORIES)) {
-                if (skills.includes(canonical) || skills.some(s => s.toLowerCase() === canonical)) {
-                    category = cat;
-                    break;
-                }
+    // Transform to expected format and add category info
+    const extractedSkills = sectionAwareSkills.map(skill => {
+        // Find category for this skill
+        let category = 'tools';
+        const normalizedSkill = normalizeSkill(skill.skill);
+        for (const [cat, skills] of Object.entries(SKILL_CATEGORIES)) {
+            if (skills.some(s => s.toLowerCase() === normalizedSkill || s.toLowerCase() === skill.skill.toLowerCase())) {
+                category = cat;
+                break;
             }
-
-            const context = findSkillContext(resumeText, alias);
-            extractedSkills.push({
-                skill: canonical, // Use canonical name
-                originalMatch: alias,
-                category: category,
-                mentions: matches.length,
-                context: context,
-                evidence: context.slice(0, 100) + (context.length > 100 ? '...' : ''),
-            });
-            foundSkills.add(canonical);
         }
+
+        return {
+            skill: normalizedSkill,
+            originalMatch: skill.skill,
+            category,
+            mentions: skill.mentions,
+            context: skill.context,
+            evidence: skill.context.slice(0, 100) + (skill.context.length > 100 ? '...' : ''),
+            section: skill.section,
+            years: skill.years,
+            level: skill.level,
+            weight: skill.weight,
+        };
     });
+
+    // Attach experience summary to the result
+    extractedSkills.experienceSummary = experienceSummary;
 
     return extractedSkills;
 }
