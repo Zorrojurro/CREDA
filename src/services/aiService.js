@@ -1,24 +1,25 @@
-// AI Service - Gemini integration for resume parsing and report generation
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// AI Service - OpenAI integration for resume parsing and report generation
+import OpenAI from 'openai';
 
-// Initialize Gemini - API key from environment variable
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+// Initialize OpenAI - API key from environment variable
+const API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
 
-let genAI = null;
-let model = null;
+let openai = null;
 
 /**
- * Initialize the Gemini AI client
+ * Initialize the OpenAI client
  */
 function initializeAI() {
     if (!API_KEY) {
-        console.warn('VITE_GEMINI_API_KEY not set - AI features disabled');
+        console.warn('VITE_OPENAI_API_KEY not set - AI features disabled');
         return false;
     }
 
-    if (!genAI) {
-        genAI = new GoogleGenerativeAI(API_KEY);
-        model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    if (!openai) {
+        openai = new OpenAI({
+            apiKey: API_KEY,
+            dangerouslyAllowBrowser: true // Required for client-side usage
+        });
     }
     return true;
 }
@@ -84,9 +85,14 @@ Extract and return ONLY a valid JSON object (no markdown, no explanation):
 }`;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.3,
+            max_tokens: 2000,
+        });
+
+        const text = response.choices[0]?.message?.content || '';
 
         // Extract JSON from response (handle markdown code blocks)
         let jsonStr = text;
@@ -99,14 +105,14 @@ Extract and return ONLY a valid JSON object (no markdown, no explanation):
         return {
             success: true,
             data: parsed,
-            source: 'gemini'
+            source: 'openai'
         };
     } catch (error) {
         console.error('AI Resume parsing error:', error);
         return {
             success: false,
             error: error.message,
-            source: 'gemini'
+            source: 'openai'
         };
     }
 }
@@ -164,9 +170,14 @@ Evaluate using the STAR method (Situation, Task, Action, Result) and provide ONL
 }`;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.3,
+            max_tokens: 2000,
+        });
+
+        const text = response.choices[0]?.message?.content || '';
 
         let jsonStr = text;
         const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -178,14 +189,14 @@ Evaluate using the STAR method (Situation, Task, Action, Result) and provide ONL
         return {
             success: true,
             data: parsed,
-            source: 'gemini'
+            source: 'openai'
         };
     } catch (error) {
         console.error('AI Report generation error:', error);
         return {
             success: false,
             error: error.message,
-            source: 'gemini'
+            source: 'openai'
         };
     }
 }
@@ -217,9 +228,14 @@ Generate ONE short, specific follow-up question that:
 Return ONLY the question text, no quotes or explanation.`;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text().trim().replace(/^["']|["']$/g, '');
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 100,
+        });
+
+        return response.choices[0]?.message?.content?.trim().replace(/^["']|["']$/g, '') || null;
     } catch (error) {
         console.error('AI Follow-up generation error:', error);
         return null;
