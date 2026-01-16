@@ -231,6 +231,156 @@ export default function CandidateFeedbackView({ feedback, onBack, onReset }) {
             });
         }
 
+        // AI Insights Section (if available)
+        const aiInsights = feedback?.aiInsights;
+        if (aiInsights) {
+            if (yPos > 150) {
+                doc.addPage();
+                yPos = 20;
+            }
+
+            // AI Section Header
+            doc.setFillColor(147, 51, 234); // Purple accent
+            doc.roundedRect(20, yPos, pageWidth - 40, 25, 3, 3, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('🤖 AI-Powered Analysis', 30, yPos + 16);
+            yPos += 35;
+
+            // STAR Analysis
+            if (aiInsights.starAnalysis) {
+                doc.setTextColor(17, 24, 39);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text('STAR Method Assessment', 20, yPos);
+                yPos += 10;
+
+                const starItems = [
+                    { label: 'Situation Detail', value: aiInsights.starAnalysis.situationDetail },
+                    { label: 'Task Clarity', value: aiInsights.starAnalysis.taskClarity },
+                    { label: 'Action Specificity', value: aiInsights.starAnalysis.actionSpecificity },
+                    { label: 'Results Measurable', value: aiInsights.starAnalysis.resultsMeasurable },
+                ];
+
+                const getStarColor = (value) => {
+                    if (value === 'strong') return [16, 185, 129];
+                    if (value === 'moderate') return [245, 158, 11];
+                    return [239, 68, 68];
+                };
+
+                starItems.forEach((item, idx) => {
+                    const x = 25 + (idx % 2) * 80;
+                    const y = yPos + Math.floor(idx / 2) * 15;
+
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(75, 85, 99);
+                    doc.text(item.label, x, y);
+
+                    const [r, g, b] = getStarColor(item.value);
+                    doc.setFillColor(r, g, b);
+                    doc.circle(x + 55, y - 2, 3, 'F');
+
+                    doc.setTextColor(r, g, b);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text((item.value || 'N/A').toUpperCase(), x + 62, y);
+                });
+                yPos += 35;
+            }
+
+            // AI Summary
+            if (aiInsights.summary) {
+                doc.setTextColor(17, 24, 39);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('AI Summary', 20, yPos);
+                yPos += 7;
+
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(10);
+                doc.setTextColor(75, 85, 99);
+                yPos = addWrappedText(`"${aiInsights.summary}"`, 20, yPos, pageWidth - 40);
+                yPos += 10;
+            }
+
+            // AI-Detected Strengths
+            if (aiInsights.strengths && aiInsights.strengths.length > 0) {
+                doc.setTextColor(16, 185, 129);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('AI-Detected Strengths', 20, yPos);
+                yPos += 7;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(55, 65, 81);
+
+                aiInsights.strengths.slice(0, 3).forEach((s) => {
+                    if (yPos > 260) { doc.addPage(); yPos = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`• ${s.title}`, 25, yPos);
+                    yPos += 5;
+                    if (s.evidence) {
+                        doc.setFont('helvetica', 'normal');
+                        yPos = addWrappedText(s.evidence, 30, yPos, pageWidth - 55);
+                    }
+                    yPos += 3;
+                });
+                yPos += 5;
+            }
+
+            // AI-Detected Concerns
+            if (aiInsights.concerns && aiInsights.concerns.length > 0) {
+                if (yPos > 240) { doc.addPage(); yPos = 20; }
+
+                doc.setTextColor(239, 68, 68);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('AI-Detected Concerns', 20, yPos);
+                yPos += 7;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(55, 65, 81);
+
+                aiInsights.concerns.slice(0, 3).forEach((c) => {
+                    if (yPos > 260) { doc.addPage(); yPos = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`• ${c.title}`, 25, yPos);
+                    yPos += 5;
+                    if (c.reason) {
+                        doc.setFont('helvetica', 'normal');
+                        yPos = addWrappedText(c.reason, 30, yPos, pageWidth - 55);
+                    }
+                    yPos += 3;
+                });
+                yPos += 5;
+            }
+
+            // AI Recommendation
+            if (aiInsights.recommendation) {
+                if (yPos > 230) { doc.addPage(); yPos = 20; }
+
+                doc.setFillColor(245, 197, 24); // Gold
+                doc.roundedRect(20, yPos, pageWidth - 40, 8, 2, 2, 'F');
+                yPos += 12;
+
+                doc.setTextColor(17, 24, 39);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('AI Recommendation', 20, yPos);
+                yPos += 7;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(55, 65, 81);
+                yPos = addWrappedText(aiInsights.recommendation, 20, yPos, pageWidth - 40);
+                yPos += 10;
+            }
+        }
+
         // Footer
         const footerY = doc.internal.pageSize.getHeight() - 15;
         doc.setFontSize(8);
